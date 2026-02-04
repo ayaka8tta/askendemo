@@ -1,181 +1,130 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Category, Recipe, ScreenState, SurveyAnswers } from './types';
-import { RECIPES, COLORS } from './constants';
-import { Heart, ChevronLeft, ChevronRight, Share2, Info, Menu, X, Home } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Category, Recipe, ScreenState } from './types';
+import { RECIPES } from './constants';
+import { Heart, ChevronLeft, Share2, Info, Home } from 'lucide-react';
 
-// Components
-const Header: React.FC<{ onHome: () => void; onFavorites: () => void }> = ({ onHome, onFavorites }) => (
+// Helpers for Daily Limit
+const SELECTION_KEY = 'asken_last_selection_date';
+const RECIPE_ID_KEY = 'asken_last_recipe_id';
+
+const getTodayString = () => new Date().toISOString().split('T')[0];
+
+const Header: React.FC<{ onHome: () => void; showHome?: boolean }> = ({ onHome, showHome = true }) => (
   <header className="bg-white border-b border-gray-100 sticky top-0 z-50 px-4 py-3 flex items-center justify-between">
     <div className="flex items-center gap-2 cursor-pointer" onClick={onHome}>
       <div className="w-8 h-8 rounded-full bg-[#7DB432] flex items-center justify-center">
         <div className="w-4 h-4 bg-white rounded-full relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1/2 bg-[#7DB432]/30"></div>
+          <div className="absolute top-0 left-0 w-full h-1/2 bg-[#7DB432]/30"></div>
         </div>
       </div>
-      <h1 className="font-bold text-xl text-[#7DB432]">あすけん</h1>
+      <h1 className="font-bold text-lg text-[#7DB432]">今日のおまかせレシピ</h1>
     </div>
-    <div className="flex items-center gap-4">
-      <button onClick={onFavorites} className="text-gray-500 hover:text-[#7DB432]">
-        <Heart size={24} />
+    {showHome && (
+      <button onClick={onHome} className="text-gray-400 hover:text-[#7DB432]">
+        <Home size={24} />
       </button>
-      <button className="text-gray-500">
-        <Menu size={24} />
-      </button>
-    </div>
+    )}
   </header>
 );
 
-const SurveyScreen: React.FC<{ onComplete: (answers: SurveyAnswers) => void }> = ({ onComplete }) => {
-  const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState<SurveyAnswers>({
-    hasApp: null,
-    frequency: '',
-    duration: '',
-    concern: ''
-  });
-
-  const questions = [
-    {
-      key: 'hasApp',
-      label: 'あすけんアプリをお持ちですか？',
-      options: [
-        { label: 'はい', value: true },
-        { label: 'いいえ', value: false }
-      ]
-    },
-    {
-      key: 'frequency',
-      label: 'あすけんはどれくらい使っていますか？',
-      options: ['毎日', '週に数回', 'たまに', '使っていない']
-    },
-    {
-      key: 'duration',
-      label: '食事の記録はどれくらい続いていますか？',
-      options: ['始めたばかり', '1ヶ月未満', '1ヶ月〜半年', '半年以上']
-    },
-    {
-      key: 'concern',
-      label: '食事でいま一番悩んでいることはどれですか？',
-      options: ['ダイエット', '筋肉をつけたい', '健康維持', '肌荒れ・美容']
-    }
-  ];
-
-  const handleSelect = (val: any) => {
-    const q = questions[step];
-    setAnswers(prev => ({ ...prev, [q.key]: val }));
-    if (step < questions.length - 1) {
-      setStep(step + 1);
-    } else {
-      onComplete({ ...answers, [q.key]: val });
-    }
-  };
-
+const SurveyScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
   return (
-    <div className="p-6 max-w-md mx-auto h-[calc(100vh-64px)] flex flex-col justify-center">
-      <div className="bg-white rounded-2xl p-8 shadow-xl border border-green-50">
-        <div className="flex items-center justify-center mb-6">
-          <div className="bg-[#F0F7E6] text-[#7DB432] rounded-full px-4 py-1 text-sm font-bold flex items-center gap-1">
-            <Info size={14} /> 簡易アンケート ({step + 1}/{questions.length})
+    <div className="p-6 max-w-md mx-auto h-[calc(100vh-64px)] flex flex-col items-center justify-center text-center">
+      <div className="bg-white rounded-3xl p-8 shadow-xl border border-green-50 w-full">
+        <div className="flex justify-center mb-6">
+          <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center text-[#7DB432]">
+            <Info size={40} />
           </div>
         </div>
-        <h2 className="text-xl font-bold text-center mb-8 leading-relaxed">
-          あなたに合ったレシピを出すための<br/>簡単アンケートです🔍
+        <h2 className="text-xl font-bold text-gray-800 mb-4 leading-relaxed">
+          あなたに合ったレシピを出すための<br />簡単アンケートです🔍
         </h2>
-
-        <div className="space-y-4">
-          {questions[step].options.map((opt, idx) => (
-            <button
-              key={idx}
-              onClick={() => handleSelect(typeof opt === 'string' ? opt : opt.value)}
-              className="w-full py-4 px-6 rounded-full border-2 border-gray-100 hover:border-[#7DB432] hover:bg-green-50 transition-all text-center font-medium text-lg text-gray-700"
-            >
-              {typeof opt === 'string' ? opt : opt.label}
-            </button>
-          ))}
-        </div>
+        <p className="text-sm text-gray-500 mb-8">
+          今の気分に合わせて、AI栄養士が<br />最適な健康メニューを提案します。
+        </p>
+        <button
+          onClick={onComplete}
+          className="w-full bg-[#7DB432] text-white py-4 rounded-full font-black text-lg shadow-lg shadow-green-100 active:scale-95 transition-all"
+        >
+          進む
+        </button>
       </div>
     </div>
   );
 };
 
-const SelectScreen: React.FC<{ onSelect: (category: Category) => void }> = ({ onSelect }) => {
+const SelectScreen: React.FC<{ 
+  onSelect: (category: Category) => void; 
+  onFavorites: () => void;
+  alreadyDone: boolean;
+  onShowLastResult: () => void;
+}> = ({ onSelect, onFavorites, alreadyDone, onShowLastResult }) => {
   return (
-    <div className="p-6 max-w-md mx-auto flex flex-col items-center gap-8 py-12">
-      <div className="relative text-center">
-        <div className="w-24 h-24 rounded-full bg-[#7DB432] mx-auto mb-4 flex items-center justify-center text-white text-4xl overflow-hidden border-4 border-white shadow-lg">
-          <img src="https://picsum.photos/seed/avatar/200/200" alt="avatar" className="object-cover w-full h-full" />
+    <div className="p-6 max-w-md mx-auto flex flex-col items-center gap-8 py-8">
+      <div className="text-center">
+        <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-md mx-auto mb-4 bg-gray-100">
+          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=b6e3f4" alt="avatar" className="w-full h-full object-cover" />
         </div>
-        <h2 className="text-2xl font-black text-gray-800 tracking-wider">
-          今日の食事は<br/><span className="text-[#7DB432]">なににする？</span>
+        <h2 className="text-2xl font-bold text-gray-800 leading-snug">
+          今日の食事は<br /><span className="text-[#7DB432]">なににする？</span>
         </h2>
       </div>
 
       <div className="w-full space-y-4">
+        {alreadyDone ? (
+          <button
+            onClick={onShowLastResult}
+            className="w-full bg-[#7DB432] text-white py-5 px-6 rounded-full shadow-md font-bold text-lg active:bg-[#6a9a2a] transition-colors"
+          >
+            本日のレシピを見る
+          </button>
+        ) : (
+          <>
+            <button
+              onClick={() => onSelect('heavy')}
+              className="w-full bg-[#333333] text-white py-5 px-6 rounded-full shadow-md font-bold text-lg active:bg-black transition-colors"
+            >
+              しっかり食べたい
+            </button>
+            <button
+              onClick={() => onSelect('moderate')}
+              className="w-full bg-[#333333] text-white py-5 px-6 rounded-full shadow-md font-bold text-lg active:bg-black transition-colors"
+            >
+              ほどよく食べたい
+            </button>
+            <button
+              onClick={() => onSelect('light')}
+              className="w-full bg-[#333333] text-white py-5 px-6 rounded-full shadow-md font-bold text-lg active:bg-black transition-colors"
+            >
+              軽く済ませたい
+            </button>
+          </>
+        )}
         <button
-          onClick={() => onSelect('heavy')}
-          className="w-full group bg-[#333] hover:bg-black text-white p-6 rounded-2xl shadow-lg transition-all transform hover:-translate-y-1"
+          onClick={onFavorites}
+          className="w-full bg-[#BDBDBD] text-white py-5 px-6 rounded-full shadow-md font-bold text-lg active:bg-gray-500 transition-colors mt-4"
         >
-          <div className="flex items-center justify-between">
-            <div className="text-left">
-              <span className="block font-bold text-xl">しっかり食べたい</span>
-              <span className="text-gray-400 text-sm">→ 肉、ご飯、麺</span>
-            </div>
-            <ChevronRight className="group-hover:translate-x-1 transition-transform" />
-          </div>
-        </button>
-
-        <button
-          onClick={() => onSelect('moderate')}
-          className="w-full group bg-white border-2 border-[#7DB432] text-[#333] p-6 rounded-2xl shadow-lg transition-all transform hover:-translate-y-1"
-        >
-          <div className="flex items-center justify-between">
-            <div className="text-left">
-              <span className="block font-bold text-xl">ほどよく食べたい</span>
-              <span className="text-gray-600 text-sm">→ 魚、野菜</span>
-            </div>
-            <ChevronRight className="group-hover:translate-x-1 transition-transform text-[#7DB432]" />
-          </div>
-        </button>
-
-        <button
-          onClick={() => onSelect('light')}
-          className="w-full group bg-white border-2 border-gray-200 text-[#333] p-6 rounded-2xl shadow-lg transition-all transform hover:-translate-y-1"
-        >
-          <div className="flex items-center justify-between">
-            <div className="text-left">
-              <span className="block font-bold text-xl">軽く済ませたい</span>
-              <span className="text-gray-600 text-sm">→ 汁物</span>
-            </div>
-            <ChevronRight className="group-hover:translate-x-1 transition-transform" />
-          </div>
+          お気に入り一覧
         </button>
       </div>
-
-      <button className="text-gray-400 font-medium underline mt-4">
-        レシピ一覧
-      </button>
     </div>
   );
 };
 
-const GachaScreen: React.FC<{ onFinish: () => void }> = ({ onFinish }) => {
+const LoadingScreen: React.FC<{ onFinish: () => void }> = ({ onFinish }) => {
   useEffect(() => {
-    const timer = setTimeout(onFinish, 2000);
+    const timer = setTimeout(onFinish, 1500);
     return () => clearTimeout(timer);
   }, [onFinish]);
 
   return (
-    <div className="h-[calc(100vh-100px)] flex flex-col items-center justify-center p-8 text-center bg-[#7DB432]">
-      <div className="relative">
-        <div className="w-48 h-48 bg-white rounded-full flex items-center justify-center animate-bounce shadow-2xl overflow-hidden border-8 border-white/30">
-           <div className="text-6xl">🥘</div>
-        </div>
-        <div className="mt-8 text-white">
-          <h2 className="text-2xl font-black mb-2 animate-pulse">レシピを選び中...</h2>
-          <p className="opacity-80">あなたにぴったりの健康メニューを<br/>探しています</p>
-        </div>
+    <div className="h-[calc(100vh-64px)] flex flex-col items-center justify-center p-8 bg-[#7DB432] text-white text-center">
+      <div className="w-40 h-40 bg-white/20 rounded-full flex items-center justify-center animate-pulse mb-8 border-4 border-white/30">
+        <div className="text-7xl animate-bounce">🍳</div>
       </div>
+      <h2 className="text-2xl font-black mb-2 italic tracking-widest">SELECTING...</h2>
+      <p className="opacity-90 font-medium">1日1回限定！<br />あなたにぴったりの健康レシピを<br />選んでいます</p>
     </div>
   );
 };
@@ -184,44 +133,52 @@ const ResultScreen: React.FC<{
   recipe: Recipe;
   isLiked: boolean;
   onLike: () => void;
-  onDetails: () => void;
-  onRedo: () => void;
-}> = ({ recipe, isLiked, onLike, onDetails, onRedo }) => {
+  onGoToFavorites: () => void;
+}> = ({ recipe, isLiked, onLike, onGoToFavorites }) => {
+  const handleExternalLink = () => {
+    window.open('https://more.asken.jp/', '_blank');
+  };
+
   return (
-    <div className="p-4 max-w-md mx-auto flex flex-col gap-4 animate-in fade-in duration-500">
-      <div className="text-center py-2">
-        <h2 className="text-[#7DB432] font-black text-xl tracking-tight">
-          今日のレシピは…
-        </h2>
+    <div className="p-4 max-w-md mx-auto animate-in fade-in duration-500">
+      <div className="text-left mb-4">
+        <h2 className="text-gray-800 font-bold text-xl">今日のレシピは…</h2>
       </div>
 
-      <div className="bg-white rounded-3xl overflow-hidden shadow-xl border border-gray-100">
+      <div className="bg-white rounded-3xl overflow-hidden shadow-xl border border-gray-100 flex flex-col">
         <img src={recipe.image} alt={recipe.title} className="w-full h-64 object-cover" />
         <div className="p-6">
-          <div className="flex gap-2 mb-3 flex-wrap">
-            {recipe.tags.map(tag => (
-              <span key={tag} className="text-xs font-bold text-[#7DB432] bg-green-50 px-2 py-1 rounded">
-                {tag}
-              </span>
-            ))}
+          <div className="text-[#7DB432] text-xs font-bold mb-2">
+            {recipe.category === 'heavy' ? '肉・米のおかず' : recipe.category === 'moderate' ? '魚・野菜のおかず' : '汁物・ヘルシー'}
           </div>
-          <h3 className="text-2xl font-black text-gray-800 mb-6 leading-snug">
+          <h3 className="text-xl font-bold text-gray-800 mb-8 leading-tight">
             {recipe.title}
           </h3>
 
-          <div className="flex gap-4 items-center">
+          <div className="space-y-4">
+            <div className="flex gap-3">
+              <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center border border-gray-100">
+                <Heart 
+                  size={28} 
+                  className={isLiked ? "text-red-500" : "text-gray-300"} 
+                  fill={isLiked ? "currentColor" : "none"} 
+                />
+              </div>
+              <button
+                onClick={onLike}
+                className={`flex-1 py-4 rounded-2xl font-bold text-lg transition-all ${
+                  isLiked 
+                  ? 'bg-red-50 text-red-500 border border-red-200' 
+                  : 'bg-gray-100 text-gray-500 border border-gray-200'
+                }`}
+              >
+                いいね！
+              </button>
+            </div>
+            
             <button
-              onClick={onLike}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-full border-2 transition-all font-bold ${
-                isLiked ? 'bg-red-50 border-red-500 text-red-500' : 'bg-gray-50 border-gray-200 text-gray-400'
-              }`}
-            >
-              <Heart size={20} fill={isLiked ? 'currentColor' : 'none'} />
-              いいね！
-            </button>
-            <button
-              onClick={onDetails}
-              className="flex-[1.5] bg-[#333] text-white py-3 rounded-full font-bold shadow-lg hover:bg-black transition-colors"
+              onClick={handleExternalLink}
+              className="w-full bg-[#333333] text-white py-4 rounded-2xl font-bold text-lg shadow-lg active:bg-black transition-colors"
             >
               レシピ詳細
             </button>
@@ -230,101 +187,15 @@ const ResultScreen: React.FC<{
       </div>
 
       <button
-        onClick={onRedo}
-        className="text-gray-400 font-bold py-4 hover:text-[#7DB432] transition-colors"
+        onClick={onGoToFavorites}
+        className="w-full bg-gray-50 text-[#7DB432] border border-green-100 rounded-2xl font-bold py-5 mt-6 hover:bg-green-50 transition-colors shadow-sm"
       >
-        もう一度ガチャを回す
+        お気に入りレシピ一覧へ
       </button>
-    </div>
-  );
-};
-
-const DetailsScreen: React.FC<{ recipe: Recipe; onBack: () => void }> = ({ recipe, onBack }) => {
-  return (
-    <div className="bg-white min-h-screen">
-      <div className="sticky top-0 bg-white/90 backdrop-blur px-4 py-4 flex items-center justify-between z-10">
-        <button onClick={onBack} className="text-gray-600"><ChevronLeft size={28} /></button>
-        <div className="flex items-center gap-2">
-           <div className="w-6 h-6 rounded-full bg-[#7DB432] flex items-center justify-center">
-             <div className="w-3 h-3 bg-white rounded-full"></div>
-           </div>
-           <span className="font-bold text-gray-800">あすけん</span>
-        </div>
-        <button className="text-gray-600"><Share2 size={24} /></button>
-      </div>
-
-      <img src={recipe.image} alt={recipe.title} className="w-full h-64 object-cover" />
-
-      <div className="p-6">
-        <h2 className="text-2xl font-black mb-4">{recipe.title}</h2>
-
-        <div className="grid grid-cols-4 gap-2 mb-8 bg-gray-50 p-4 rounded-2xl text-center">
-          <div>
-            <div className="text-[10px] text-gray-400 uppercase font-bold">エネルギー</div>
-            <div className="font-black text-[#7DB432]">{recipe.calories}kcal</div>
-          </div>
-          <div>
-            <div className="text-[10px] text-gray-400 uppercase font-bold">たんぱく質</div>
-            <div className="font-black text-[#7DB432]">{recipe.protein}g</div>
-          </div>
-          <div>
-            <div className="text-[10px] text-gray-400 uppercase font-bold">脂質</div>
-            <div className="font-black text-[#7DB432]">{recipe.fat}g</div>
-          </div>
-          <div>
-            <div className="text-[10px] text-gray-400 uppercase font-bold">炭水化物</div>
-            <div className="font-black text-[#7DB432]">{recipe.carbs}g</div>
-          </div>
-        </div>
-
-        <div className="mb-8">
-          <h3 className="font-black text-xl mb-4 border-l-4 border-[#7DB432] pl-3">材料</h3>
-          <ul className="space-y-2">
-            {recipe.ingredients.map((ing, i) => (
-              <li key={i} className="flex justify-between py-2 border-b border-gray-100 last:border-0">
-                <span className="text-gray-700">{ing}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="mb-12">
-          <h3 className="font-black text-xl mb-4 border-l-4 border-[#7DB432] pl-3">作り方</h3>
-          <ol className="space-y-6">
-            {recipe.instructions.map((step, i) => (
-              <li key={i} className="flex gap-4">
-                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#7DB432] text-white flex items-center justify-center font-bold text-xs mt-1">
-                  {i + 1}
-                </span>
-                <p className="text-gray-700 leading-relaxed">{step}</p>
-              </li>
-            ))}
-          </ol>
-        </div>
-
-        <div className="bg-green-50 rounded-3xl p-6 border border-green-100 mb-8">
-           <div className="flex gap-4 items-start">
-              <div className="w-20 h-28 bg-white rounded border border-gray-200 flex-shrink-0 flex items-center justify-center p-2">
-                 <img src="https://picsum.photos/seed/book/100/150" alt="Book" className="object-cover" />
-              </div>
-              <div>
-                <h4 className="font-bold text-sm mb-1">📖 このレシピが載っている本</h4>
-                <p className="text-xs text-gray-600 mb-3">あすけん公式 やせた人の冷蔵庫、これ入ってます！ あすけん栄養士のおすすめ！最強やせ食材で10分ごはん</p>
-                <button className="bg-white border border-[#7DB432] text-[#7DB432] px-3 py-1 rounded-full text-xs font-bold">
-                  Amazonで購入
-                </button>
-              </div>
-           </div>
-        </div>
-
-        <div className="bg-[#7DB432] rounded-3xl p-8 text-center text-white">
-          <h3 className="text-xl font-black mb-2">あすけんで食事を記録しよう！</h3>
-          <p className="text-sm opacity-90 mb-6">AI栄養士があなたの食事にアドバイス。<br/>まずは無料でダウンロード！</p>
-          <button className="bg-white text-[#7DB432] px-8 py-4 rounded-full font-black shadow-xl">
-            アプリをダウンロード
-          </button>
-        </div>
-      </div>
+      
+      <p className="text-center text-xs text-gray-400 mt-6 font-medium">
+        ※おまかせレシピは1日1回までです。<br />明日また新しいレシピに出会えます。
+      </p>
     </div>
   );
 };
@@ -335,33 +206,38 @@ const FavoritesScreen: React.FC<{
   onBack: () => void;
 }> = ({ favorites, onSelect, onBack }) => {
   return (
-    <div className="p-4 max-w-md mx-auto">
-      <div className="flex items-center gap-4 mb-6">
-        <button onClick={onBack} className="text-gray-600"><ChevronLeft size={28} /></button>
+    <div className="p-4 max-w-md mx-auto pb-20">
+      <div className="flex items-center gap-4 mb-8">
+        <button onClick={onBack} className="text-gray-400"><ChevronLeft size={30} /></button>
         <h2 className="text-2xl font-black text-gray-800">お気に入りレシピ</h2>
       </div>
 
       {favorites.length === 0 ? (
-        <div className="text-center py-20 text-gray-400">
-           <Heart size={48} className="mx-auto mb-4 opacity-20" />
-           <p>お気に入りのレシピはまだありません</p>
+        <div className="text-center py-24 text-gray-300">
+          <Heart size={64} className="mx-auto mb-6 opacity-10" />
+          <p className="font-bold text-gray-400">お気に入りはまだありません</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-6">
           {favorites.map(recipe => (
             <div
               key={recipe.id}
               onClick={() => onSelect(recipe)}
-              className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 flex flex-col cursor-pointer"
+              className="flex flex-col gap-2 cursor-pointer group"
             >
-              <img src={recipe.image} alt={recipe.title} className="w-full h-32 object-cover" />
-              <div className="p-3 flex-1 flex flex-col justify-between">
-                <h3 className="text-xs font-bold text-gray-800 line-clamp-2 mb-2 leading-tight">
-                  {recipe.title}
-                </h3>
-                <div className="text-[10px] text-[#7DB432] font-bold">
+              <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-sm border border-gray-100 relative">
+                <img src={recipe.image} alt={recipe.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                <div className="absolute top-2 right-2 w-7 h-7 bg-white/90 rounded-full flex items-center justify-center text-red-500 shadow-sm">
+                  <Heart size={14} fill="currentColor" />
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-bold text-[#7DB432] mb-0.5">
                   {recipe.tags[0]}
                 </div>
+                <h3 className="text-xs font-bold text-gray-800 line-clamp-2 leading-snug">
+                  {recipe.title}
+                </h3>
               </div>
             </div>
           ))}
@@ -373,36 +249,52 @@ const FavoritesScreen: React.FC<{
 
 export default function App() {
   const [screen, setScreen] = useState<ScreenState>('SURVEY');
-  const [surveyDone, setSurveyDone] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category>('moderate');
   const [currentRecipe, setCurrentRecipe] = useState<Recipe | null>(null);
   const [favorites, setFavorites] = useState<Recipe[]>([]);
+  const [alreadyDoneToday, setAlreadyDoneToday] = useState(false);
 
-  // Check if survey was done previously (simulated)
   useEffect(() => {
-    const saved = localStorage.getItem('asken_survey_done');
-    if (saved) {
-      setSurveyDone(true);
+    // Check daily limit and favorites
+    const lastDate = localStorage.getItem(SELECTION_KEY);
+    const lastId = localStorage.getItem(RECIPE_ID_KEY);
+    const today = getTodayString();
+
+    if (lastDate === today && lastId) {
+      setAlreadyDoneToday(true);
+      const found = RECIPES.find(r => r.id === lastId);
+      if (found) setCurrentRecipe(found);
+    }
+    
+    // Check if survey was done
+    const surveyDone = localStorage.getItem('asken_survey_done');
+    if (surveyDone) {
       setScreen('SELECT');
     }
   }, []);
 
-  const handleSurveyComplete = (answers: SurveyAnswers) => {
-    console.log('Survey answers:', answers);
-    setSurveyDone(true);
+  const handleSurveyComplete = () => {
     localStorage.setItem('asken_survey_done', 'true');
     setScreen('SELECT');
   };
 
   const handleCategorySelect = (cat: Category) => {
+    if (alreadyDoneToday) return; 
     setSelectedCategory(cat);
-    setScreen('GACHA');
+    setScreen('GACHA'); // Internally still use GACHA screen state for loading
   };
 
-  const handleGachaFinish = () => {
+  const handleSelectionFinish = () => {
     const filtered = RECIPES.filter(r => r.category === selectedCategory);
-    const random = filtered[Math.floor(Math.random() * filtered.length)];
+    const random = filtered[Math.floor(Math.random() * filtered.length)] || RECIPES[0];
+    
+    // Save daily limit
+    const today = getTodayString();
+    localStorage.setItem(SELECTION_KEY, today);
+    localStorage.setItem(RECIPE_ID_KEY, random.id);
+    
     setCurrentRecipe(random);
+    setAlreadyDoneToday(true);
     setScreen('RESULT');
   };
 
@@ -416,63 +308,57 @@ export default function App() {
 
   const isLiked = currentRecipe ? favorites.some(f => f.id === currentRecipe.id) : false;
 
+  const handleHome = () => {
+    setScreen('SELECT');
+  };
+
   return (
-    <div className="min-h-screen pb-10">
-      {screen !== 'DETAILS' && (
-        <Header
-          onHome={() => setScreen(surveyDone ? 'SELECT' : 'SURVEY')}
-          onFavorites={() => setScreen('FAVORITES')}
-        />
+    <div className="min-h-screen bg-white font-sans">
+      {screen !== 'GACHA' && screen !== 'SURVEY' && (
+        <Header onHome={handleHome} />
       )}
 
       <main>
         {screen === 'SURVEY' && <SurveyScreen onComplete={handleSurveyComplete} />}
 
-        {screen === 'SELECT' && <SelectScreen onSelect={handleCategorySelect} />}
+        {screen === 'SELECT' && (
+          <SelectScreen 
+            onSelect={handleCategorySelect} 
+            onFavorites={() => setScreen('FAVORITES')} 
+            alreadyDone={alreadyDoneToday}
+            onShowLastResult={() => setScreen('RESULT')}
+          />
+        )}
 
-        {screen === 'GACHA' && <GachaScreen onFinish={handleGachaFinish} />}
+        {screen === 'GACHA' && <LoadingScreen onFinish={handleSelectionFinish} />}
 
         {screen === 'RESULT' && currentRecipe && (
           <ResultScreen
             recipe={currentRecipe}
             isLiked={isLiked}
             onLike={() => toggleFavorite(currentRecipe)}
-            onDetails={() => setScreen('DETAILS')}
-            onRedo={() => setScreen('SELECT')}
+            onGoToFavorites={() => setScreen('FAVORITES')}
           />
-        )}
-
-        {screen === 'DETAILS' && currentRecipe && (
-          <DetailsScreen recipe={currentRecipe} onBack={() => setScreen('RESULT')} />
         )}
 
         {screen === 'FAVORITES' && (
           <FavoritesScreen
             favorites={favorites}
             onSelect={(r) => {
-              setCurrentRecipe(r);
-              setScreen('DETAILS');
+              window.open('https://more.asken.jp/', '_blank');
             }}
-            onBack={() => setScreen(surveyDone ? 'SELECT' : 'SURVEY')}
+            onBack={handleHome}
           />
         )}
       </main>
 
-      {/* Persistent Bottom Tab (Mockup style) */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex items-center justify-around py-2 px-4 z-50 shadow-[0_-1px_10px_rgba(0,0,0,0.05)]">
-        <button onClick={() => setScreen('SELECT')} className={`flex flex-col items-center gap-1 ${screen === 'SELECT' ? 'text-[#7DB432]' : 'text-gray-400'}`}>
-          <Home size={20} />
-          <span className="text-[10px] font-bold">ホーム</span>
-        </button>
-        <button className="flex flex-col items-center gap-1 text-gray-400">
-          <Menu size={20} />
-          <span className="text-[10px] font-bold">メニュー</span>
-        </button>
-        <button onClick={() => setScreen('FAVORITES')} className={`flex flex-col items-center gap-1 ${screen === 'FAVORITES' ? 'text-[#7DB432]' : 'text-gray-400'}`}>
-          <Heart size={20} />
-          <span className="text-[10px] font-bold">お気に入り</span>
-        </button>
-      </nav>
+      {/* Persistent Footer Logo Branding */}
+      <footer className="py-8 flex flex-col items-center gap-2 opacity-20">
+        <div className="w-10 h-10 rounded-full bg-[#7DB432] flex items-center justify-center">
+          <div className="w-5 h-5 bg-white rounded-full"></div>
+        </div>
+        <p className="text-[10px] font-bold text-gray-800 uppercase tracking-widest">ASKEN Inc.</p>
+      </footer>
     </div>
   );
 }
