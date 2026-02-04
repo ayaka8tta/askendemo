@@ -1,0 +1,5 @@
+{
+  "name": "Asken Recipe Gacha LIFF",
+  "description": "A health-conscious recipe discovery app built for LINE LIFF, inspired by the Asken diet app. It features a simple survey, mood-based recipe gacha, and a collection of healthy meal recommendations.",
+  "requestFramePermissions": []
+}
